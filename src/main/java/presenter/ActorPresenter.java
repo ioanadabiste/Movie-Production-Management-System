@@ -1,15 +1,15 @@
 package presenter;
 
 import model.Actor;
-import model.repository.DataRepository;
+import model.repository.ActorRepository;
 
 import java.util.List;
 
 public class ActorPresenter {
-    private DataRepository repository;
+        private ActorRepository repository;
 
     public ActorPresenter() {
-        this.repository = DataRepository.getInstance();
+        this.repository = ActorRepository.getInstance();
     }
 
     public void adaugaActor(String nume, String prenume, int anNastere, String nationalitate) {

@@ -1,15 +1,15 @@
 package presenter;
 
 import model.Regizor;
-import model.repository.DataRepository;
+import model.repository.RegizorRepository;
 
 import java.util.List;
 
 public class RegizorPresenter {
-    private DataRepository repository;
+    private RegizorRepository repository;
 
     public RegizorPresenter() {
-        this.repository = DataRepository.getInstance();
+        this.repository = RegizorRepository.getInstance();
     }
 
     public void adaugaRegizor(String nume, String prenume, int anNastere, String nationalitate) {
