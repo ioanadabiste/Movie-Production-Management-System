@@ -7,8 +7,8 @@ import java.util.List;
 public class ScenaristPresenter {
     private ScenaristRepository repository;
 
-    public ScenaristPresenter() {
-        this.repository = ScenaristRepository.getInstance();
+    public ScenaristPresenter(ScenaristRepository repository) {
+        this.repository = repository;
     }
 
     public void adaugaScenarist(String nume, String prenume, int anNastere, String nationalitate) {

@@ -8,8 +8,8 @@ import java.util.List;
 public class ActorPresenter {
         private ActorRepository repository;
 
-    public ActorPresenter() {
-        this.repository = ActorRepository.getInstance();
+    public ActorPresenter(ActorRepository repository) {
+        this.repository = repository;
     }
 
     public void adaugaActor(String nume, String prenume, int anNastere, String nationalitate) {

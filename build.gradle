@@ -1,6 +1,8 @@
 plugins {
     id 'java'
     id 'application'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 
 }
 
@@ -15,9 +17,12 @@ dependencies {
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre11'
+    implementation 'mysql:mysql-connector-java:8.0.33'
+    implementation 'org.apache.pdfbox:pdfbox:2.0.30'
 
 }
+apply plugin: "com.github.johnrengelman.shadow"
+
 java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
@@ -26,7 +31,11 @@ java {
 application {
     mainClass = 'org.example.Main'
 }
-
+jar {
+    manifest {
+        attributes 'Main-Class': 'launcher.Main'
+    }
+}
 test {
     useJUnitPlatform()
 }

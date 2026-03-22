@@ -6,23 +6,17 @@ import java.util.*;
 
 public class ActorRepository {
 
-    private static ActorRepository instance; // instanța singleton
+    private final Connection connection;
 
-    private ActorRepository() {
-
+    
+    public ActorRepository(Connection connection) {
+        this.connection = connection;
     }
 
-    public static ActorRepository getInstance() {
-        if (instance == null) {
-            instance = new ActorRepository();
-        }
-        return instance;
-    }
     public void adaugaActor(Actor actor) {
-        String sql = "INSERT INTO Actori (id, nume, prenume, an_nastere, nationalitate) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO actori (id, nume, prenume, an_nastere, nationalitate) VALUES (?, ?, ?, ?, ?)";
 
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
 
             stmt.setString(1, actor.getId());
             stmt.setString(2, actor.getNume());
@@ -32,15 +26,14 @@ public class ActorRepository {
 
             stmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println("Eroare actor: " + e.getMessage());
+            System.err.println("Eroare adaugare actor: " + e.getMessage());
         }
     }
 
     public void actualizeazaActor(Actor actor) {
-        String sql = "UPDATE Actori SET nume=?, prenume=?, an_nastere=?, nationalitate=? WHERE id=?";
+        String sql = "UPDATE actori SET nume=?, prenume=?, an_nastere=?, nationalitate=? WHERE id=?";
 
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
 
             stmt.setString(1, actor.getNume());
             stmt.setString(2, actor.getPrenume());
@@ -50,71 +43,66 @@ public class ActorRepository {
 
             stmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println(e.getMessage());
+            System.err.println("Eroare actualizare actor: " + e.getMessage());
         }
     }
 
     public void stergeActor(String id) {
-        String sql = "DELETE FROM Actori WHERE id=?";
+        String sql = "DELETE FROM actori WHERE id=?";
 
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
 
             stmt.setString(1, id);
             stmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println(e.getMessage());
+            System.err.println("Eroare stergere actor: " + e.getMessage());
         }
     }
 
     public List<Actor> getActori() {
         List<Actor> list = new ArrayList<>();
-        String sql = "SELECT * FROM Actori ORDER BY nume, prenume";
+        String sql = "SELECT * FROM actori ORDER BY nume, prenume";
 
-        try (Connection conn = DatabaseManager.getConnection();
-             Statement stmt = conn.createStatement();
+        try (Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                Actor a = new Actor();
-                a.setId(rs.getString("id"));
-                a.setNume(rs.getString("nume"));
-                a.setPrenume(rs.getString("prenume"));
-                a.setAnNastere(rs.getInt("an_nastere"));
-                a.setNationalitate(rs.getString("nationalitate"));
-                list.add(a);
+                list.add(mapActor(rs));
             }
 
         } catch (SQLException e) {
-            System.err.println(e.getMessage());
+            System.err.println("Eroare listare actori: " + e.getMessage());
         }
 
         return list;
     }
 
     public Actor getActorById(String id) {
-        String sql = "SELECT * FROM Actori WHERE id=?";
+        String sql = "SELECT * FROM actori WHERE id=?";
 
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
 
             stmt.setString(1, id);
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                Actor a = new Actor();
-                a.setId(rs.getString("id"));
-                a.setNume(rs.getString("nume"));
-                a.setPrenume(rs.getString("prenume"));
-                a.setAnNastere(rs.getInt("an_nastere"));
-                a.setNationalitate(rs.getString("nationalitate"));
-                return a;
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapActor(rs);
+                }
             }
-
         } catch (SQLException e) {
-            System.err.println(e.getMessage());
+            System.err.println("Eroare cautare actor: " + e.getMessage());
         }
 
         return null;
+    }
+
+
+    private Actor mapActor(ResultSet rs) throws SQLException {
+        Actor a = new Actor();
+        a.setId(rs.getString("id"));
+        a.setNume(rs.getString("nume"));
+        a.setPrenume(rs.getString("prenume"));
+        a.setAnNastere(rs.getInt("an_nastere"));
+        a.setNationalitate(rs.getString("nationalitate"));
+        return a;
     }
 }

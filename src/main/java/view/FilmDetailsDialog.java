@@ -113,7 +113,7 @@ public class FilmDetailsDialog extends JDialog {
         panelPrincipal.add(panelActori);
         panelPrincipal.add(Box.createVerticalStrut(10));
 
-        // Imagini
+
         if (!film.getCaiImagini().isEmpty()) {
             JPanel panelImagini = new JPanel(new FlowLayout(FlowLayout.LEFT));
             panelImagini.setBorder(BorderFactory.createTitledBorder("Imagini din Film"));
@@ -153,7 +153,6 @@ public class FilmDetailsDialog extends JDialog {
         JScrollPane scrollPrincipal = new JScrollPane(panelPrincipal);
         add(scrollPrincipal, BorderLayout.CENTER);
 
-        // Buton inchidere
         JPanel panelButon = new JPanel();
         JButton btnInchide = new JButton("Închide");
                 btnInchide.addActionListener(e -> dispose());

@@ -28,8 +28,8 @@ public class FilmView extends JPanel {
     private String idFilmSelectat = null;
     private List<String> imaginiSelectate = new ArrayList<>();
 
-    public FilmView() {
-        this.presenter = new FilmPresenter();
+    public FilmView(FilmPresenter presenter) {
+        this.presenter = presenter; // Primim presenterul gata configurat din MainView
         initializeUI();
         incarcaFilme();
     }
@@ -194,34 +194,45 @@ public class FilmView extends JPanel {
         });
     }
 
-        private void adaugaFilm() {
-            try {
-                String titlu = txtTitlu.getText().trim();
-                int anRealizare = Integer.parseInt(txtAnRealizare.getText().trim());
-                TipFilm tipFilm = (TipFilm) cmbTipFilm.getSelectedItem();
-                CategorieFilm categorieFilm = (CategorieFilm) cmbCategorieFilm.getSelectedItem();
-                String descriere = txtDescriere.getText().trim();
-
-                if (titlu.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Titlul este obligatoriu!");
-                    return;
-                }
-
-                presenter.adaugaFilm(titlu, anRealizare, tipFilm, categorieFilm, descriere);
-
-                // Găsim filmul nou adăugat și îl actualizăm cu detalii complete
-                List<Film> filme = presenter.getFilme();
-                Film filmNou = filme.get(filme.size() - 1);
-
-                actualizeazaDetaliiFilm(filmNou);
-
-                incarcaFilme();
-                curataFormular();
-                JOptionPane.showMessageDialog(this, "Film adăugat cu succes!");
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "An realizare invalid!");
+    private void adaugaFilm() {
+        try {
+            String titlu = txtTitlu.getText().trim();
+            if (titlu.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Titlul este obligatoriu!");
+                return;
             }
+
+            int anRealizare = Integer.parseInt(txtAnRealizare.getText().trim());
+            TipFilm tipFilm = (TipFilm) cmbTipFilm.getSelectedItem();
+            CategorieFilm categorieFilm = (CategorieFilm) cmbCategorieFilm.getSelectedItem();
+            String descriere = txtDescriere.getText().trim();
+
+
+            Regizor r = (Regizor) cmbRegizor.getSelectedItem();
+            String regizorId = (r != null) ? r.getId() : null;
+
+            Scenarist s = (Scenarist) cmbScenarist.getSelectedItem();
+            String scenaristId = (s != null) ? s.getId() : null;
+
+
+            List<String> actorIds = new ArrayList<>();
+            for (Actor actor : listaActori.getSelectedValuesList()) {
+                actorIds.add(actor.getId());
+            }
+
+
+            presenter.adaugaFilm(titlu, anRealizare, tipFilm, categorieFilm,
+                    descriere, regizorId, scenaristId,
+                    actorIds, imaginiSelectate);
+
+            incarcaFilme();
+            curataFormular();
+            JOptionPane.showMessageDialog(this, "Film adăugat cu succes cu toți actorii și imaginile selectate!");
+
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "An realizare invalid!");
         }
+    }
 
         private void actualizeazaFilm() {
             if (idFilmSelectat == null) {
@@ -337,37 +348,51 @@ public class FilmView extends JPanel {
             }
         }
 
-        private void selecteazaImagini() {
-            JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setMultiSelectionEnabled(true);
-            FileNameExtensionFilter filter = new FileNameExtensionFilter(
-                    "Imagini", "jpg", "jpeg", "png", "gif");
-                    fileChooser.setFileFilter(filter);
+    private void selecteazaImagini() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setMultiSelectionEnabled(true);
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                "Imagini", "jpg", "jpeg", "png", "gif");
+        fileChooser.setFileFilter(filter);
 
-            int result = fileChooser.showOpenDialog(this);
-            if (result == JFileChooser.APPROVE_OPTION) {
-                File[] fisiere = fileChooser.getSelectedFiles();
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File[] fisiere = fileChooser.getSelectedFiles();
 
-                if (fisiere.length > 3) {
-                    JOptionPane.showMessageDialog(this, "Puteți selecta maximum 3 imagini!");
-                    return;
-                }
-
-                imaginiSelectate.clear();
-                for (File fisier : fisiere) {
-                    try {
-                        File destinatie = new File("images" + System.currentTimeMillis() + "_" + fisier.getName());
-                                destinatie.getParentFile().mkdirs();
-                        Files.copy(fisier.toPath(), destinatie.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                        imaginiSelectate.add(destinatie.getPath());
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(this, "Eroare la copierea imaginii: " + ex.getMessage());
-                    }
-                }
-
-                JOptionPane.showMessageDialog(this, imaginiSelectate.size() + " imagini selectate!");
+            if (fisiere.length > 3) {
+                JOptionPane.showMessageDialog(this, "Puteți selecta maximum 3 imagini!");
+                return;
             }
+
+
+            File directorImagini = new File("images");
+
+
+            if (!directorImagini.exists()) {
+                directorImagini.mkdirs();
+            }
+
+            imaginiSelectate.clear();
+            for (File fisier : fisiere) {
+                try {
+
+                    String numeFisierUnic = System.currentTimeMillis() + "_" + fisier.getName();
+                    File destinatie = new File(directorImagini, numeFisierUnic);
+
+
+                    Files.copy(fisier.toPath(), destinatie.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+
+                    imaginiSelectate.add(destinatie.getPath());
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Eroare la copierea imaginii: " + ex.getMessage());
+                }
+            }
+
+            JOptionPane.showMessageDialog(this, imaginiSelectate.size() + " imagini selectate!");
         }
+    }
 
         private void afiseazaDialogFiltrare() {
             JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Filtrare Filme", true);

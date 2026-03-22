@@ -6,23 +6,17 @@ import java.util.*;
 
 public class RegizorRepository {
 
-    private static RegizorRepository instance; // instanța singleton
+    private final Connection connection;
 
-    private RegizorRepository() {
+
+    public RegizorRepository(Connection connection) {
+        this.connection = connection;
     }
 
-    public static RegizorRepository getInstance() {
-        if (instance == null) {
-            instance = new RegizorRepository();
-        }
-        return instance;
-    }
     public void adaugaRegizor(Regizor r) {
-        String sql = "INSERT INTO Regizori VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO regizori (id, nume, prenume, an_nastere, nationalitate) VALUES (?, ?, ?, ?, ?)";
 
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, r.getId());
             stmt.setString(2, r.getNume());
             stmt.setString(3, r.getPrenume());
@@ -31,16 +25,14 @@ public class RegizorRepository {
 
             stmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println(e.getMessage());
+            System.err.println("Eroare adaugare regizor: " + e.getMessage());
         }
     }
 
     public void actualizeazaRegizor(Regizor r) {
-        String sql = "UPDATE Regizori SET nume=?, prenume=?, an_nastere=?, nationalitate=? WHERE id=?";
+        String sql = "UPDATE regizori SET nume=?, prenume=?, an_nastere=?, nationalitate=? WHERE id=?";
 
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, r.getNume());
             stmt.setString(2, r.getPrenume());
             stmt.setInt(3, r.getAnNastere());
@@ -49,70 +41,63 @@ public class RegizorRepository {
 
             stmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println(e.getMessage());
+            System.err.println("Eroare actualizare regizor: " + e.getMessage());
         }
     }
 
     public void stergeRegizor(String id) {
-        String sql = "DELETE FROM Regizori WHERE id=?";
+        String sql = "DELETE FROM regizori WHERE id=?";
 
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, id);
             stmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println(e.getMessage());
+            System.err.println("Eroare stergere regizor: " + e.getMessage());
         }
     }
 
     public List<Regizor> getRegizori() {
         List<Regizor> list = new ArrayList<>();
+        String sql = "SELECT * FROM regizori ORDER BY nume, prenume";
 
-        try (Connection conn = DatabaseManager.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM Regizori ORDER BY nume, prenume")) {
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                Regizor r = new Regizor();
-                r.setId(rs.getString("id"));
-                r.setNume(rs.getString("nume"));
-                r.setPrenume(rs.getString("prenume"));
-                r.setAnNastere(rs.getInt("an_nastere"));
-                r.setNationalitate(rs.getString("nationalitate"));
-                list.add(r);
+                list.add(mapRegizor(rs));
             }
-
         } catch (SQLException e) {
-            System.err.println(e.getMessage());
+            System.err.println("Eroare listare regizori: " + e.getMessage());
         }
 
         return list;
     }
 
     public Regizor getRegizorById(String id) {
-        String sql = "SELECT * FROM Regizori WHERE id=?";
+        String sql = "SELECT * FROM regizori WHERE id=?";
 
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, id);
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                Regizor r = new Regizor();
-                r.setId(rs.getString("id"));
-                r.setNume(rs.getString("nume"));
-                r.setPrenume(rs.getString("prenume"));
-                r.setAnNastere(rs.getInt("an_nastere"));
-                r.setNationalitate(rs.getString("nationalitate"));
-                return r;
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapRegizor(rs);
+                }
             }
-
         } catch (SQLException e) {
-            System.err.println(e.getMessage());
+            System.err.println("Eroare cautare regizor: " + e.getMessage());
         }
 
         return null;
+    }
+
+
+    private Regizor mapRegizor(ResultSet rs) throws SQLException {
+        Regizor r = new Regizor();
+        r.setId(rs.getString("id"));
+        r.setNume(rs.getString("nume"));
+        r.setPrenume(rs.getString("prenume"));
+        r.setAnNastere(rs.getInt("an_nastere"));
+        r.setNationalitate(rs.getString("nationalitate"));
+        return r;
     }
 }

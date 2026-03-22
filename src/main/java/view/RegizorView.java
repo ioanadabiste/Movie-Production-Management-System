@@ -15,8 +15,8 @@ public class RegizorView extends JPanel {
     private JButton btnAdauga, btnActualizeaza, btnSterge, btnCurata;
     private String idRegizorSelectat = null;
 
-    public RegizorView() {
-        this.presenter = new RegizorPresenter();
+    public RegizorView(RegizorPresenter presenter) {
+        this.presenter = presenter; // Primim presenter-ul injectat
         initializeUI();
         incarcaRegizori();
     }

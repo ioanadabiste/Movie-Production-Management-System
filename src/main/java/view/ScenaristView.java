@@ -15,8 +15,8 @@ public class ScenaristView extends JPanel {
     private JButton btnAdauga, btnActualizeaza, btnSterge, btnCurata;
     private String idScenaristSelectat = null;
 
-    public ScenaristView() {
-        this.presenter = new ScenaristPresenter();
+    public ScenaristView(ScenaristPresenter presenter) {
+        this.presenter = presenter; // Primim presenterul deja legat la baza de date
         initializeUI();
         incarcaScenaristi();
     }

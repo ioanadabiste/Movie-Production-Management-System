@@ -1,6 +1,10 @@
 package presenter;
 
 import model.*;
+import model.repository.ActorRepository;
+import model.repository.FilmRepository;
+import model.repository.RegizorRepository;
+import model.repository.ScenaristRepository;
 
 import java.util.List;
 
@@ -8,17 +12,38 @@ public class MainPresenter {
 
     private ActorPresenter actorPresenter;
     private FilmPresenter filmPresenter;
+
+    public ActorPresenter getActorPresenter() {
+        return actorPresenter;
+    }
+
+    public FilmPresenter getFilmPresenter() {
+        return filmPresenter;
+    }
+
+    public RegizorPresenter getRegizorPresenter() {
+        return regizorPresenter;
+    }
+
+    public ScenaristPresenter getScenaristPresenter() {
+        return scenaristPresenter;
+    }
+
     private RegizorPresenter regizorPresenter;
     private ScenaristPresenter scenaristPresenter;
 
-    public MainPresenter() {
-        actorPresenter = new ActorPresenter();
-        filmPresenter = new FilmPresenter();
-        regizorPresenter = new RegizorPresenter();
-        scenaristPresenter = new ScenaristPresenter();
+    public MainPresenter(FilmRepository filmRepo,
+                         ActorRepository actorRepo,
+                         RegizorRepository regizorRepo,
+                         ScenaristRepository scenaristRepo) {
+
+        this.actorPresenter = new ActorPresenter(actorRepo);
+        this.regizorPresenter = new RegizorPresenter(regizorRepo);
+        this.scenaristPresenter = new ScenaristPresenter(scenaristRepo);
+        this.filmPresenter = new FilmPresenter(filmRepo, actorRepo, regizorRepo, scenaristRepo);
     }
 
-    // ===================== ACTORI =====================
+    //  ACTORI
 
     public void adaugaActor(String nume, String prenume, int anNastere, String nationalitate) {
         actorPresenter.adaugaActor(nume, prenume, anNastere, nationalitate);
@@ -40,7 +65,7 @@ public class MainPresenter {
         return actorPresenter.getActorById(id);
     }
 
-    // ===================== REGIZORI =====================
+    // REGIZORI
 
     public void adaugaRegizor(String nume, String prenume, int anNastere, String nationalitate) {
         regizorPresenter.adaugaRegizor(nume, prenume, anNastere, nationalitate);
@@ -62,7 +87,7 @@ public class MainPresenter {
         return regizorPresenter.getRegizorById(id);
     }
 
-    // ===================== SCENARISTI =====================
+    // SCENARISTI
 
     public void adaugaScenarist(String nume, String prenume, int anNastere, String nationalitate) {
         scenaristPresenter.adaugaScenarist(nume, prenume, anNastere, nationalitate);
@@ -84,10 +109,14 @@ public class MainPresenter {
         return scenaristPresenter.getScenaristById(id);
     }
 
-    // ===================== FILME =====================
+    // FILME
 
-    public void adaugaFilm(String titlu, int an, TipFilm tip, CategorieFilm categorie, String descriere) {
-        filmPresenter.adaugaFilm(titlu, an, tip, categorie, descriere);
+    public void adaugaFilm(String titlu, int an, TipFilm tip, CategorieFilm categorie,
+                           String descriere, String regizorId, String scenaristId,
+                           List<String> actorIds, List<String> imagini) {
+
+        filmPresenter.adaugaFilm(titlu, an, tip, categorie, descriere,
+                regizorId, scenaristId, actorIds, imagini);
     }
 
     public void actualizeazaFilm(String id, String titlu, int an, TipFilm tip,

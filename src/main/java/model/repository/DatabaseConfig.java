@@ -1,27 +1,37 @@
 package model.repository;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
 public class DatabaseConfig {
 
-    private static final String SERVER = "localhost";   // sau IP-ul serverului
-    private static final String PORT = "1433";          // portul default SQL Server
-    private static final String DATABASE = "MovieProductionDB";
+    private static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
 
-    public static String getConnectionUrl() {
-        // integratedSecurity=true pentru Windows Authentication
-        return String.format(
-                "jdbc:sqlserver://%s:%s;databaseName=%s;integratedSecurity=true;",
-                SERVER, PORT, DATABASE
-        );
-    }
+    private static final String DB_URL = "jdbc:mysql://localhost/"; // 127.0.0.1
 
-    // Nu mai avem username si password
-    public static void testConnection() {
-        try (java.sql.Connection conn = java.sql.DriverManager.getConnection(getConnectionUrl())) {
-            System.out.println("Conexiune reușită la SQL Server!");
-            System.out.println("  Server: " + SERVER + ":" + PORT);
-            System.out.println("  Database: " + DATABASE);
-        } catch (java.sql.SQLException e) {
-            System.err.println("Eroare la conectare: " + e.getMessage());
+    private static final String USER = "root";
+
+    private static final String PASSWORD = "root";
+
+    private static final int TIMEOUT = 5;
+
+    private Connection connection;
+
+
+    public DatabaseConfig(String schema){
+
+        try {
+            Class.forName(JDBC_DRIVER);
+            connection = DriverManager.getConnection(DB_URL + schema  , USER, PASSWORD);
+        } catch (ClassNotFoundException e)
+        {
+            e.printStackTrace();
+        } catch (SQLException e){
+            e.printStackTrace();
         }
+    }
+    public Connection getConnection(){
+        return connection;
     }
 }

@@ -15,8 +15,8 @@ public class ActorView extends JPanel {
     private JButton btnAdauga, btnActualizeaza, btnSterge, btnCurata;
     private String idActorSelectat = null;
 
-    public ActorView() {
-        this.presenter = new ActorPresenter();
+    public ActorView(ActorPresenter presenter) {
+        this.presenter = presenter; // Primim presenterul gata configurat
         initializeUI();
         incarcaActori();
     }

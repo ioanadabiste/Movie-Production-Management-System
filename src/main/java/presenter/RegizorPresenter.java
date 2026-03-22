@@ -8,8 +8,8 @@ import java.util.List;
 public class RegizorPresenter {
     private RegizorRepository repository;
 
-    public RegizorPresenter() {
-        this.repository = RegizorRepository.getInstance();
+    public RegizorPresenter(RegizorRepository repository) {
+        this.repository = repository;
     }
 
     public void adaugaRegizor(String nume, String prenume, int anNastere, String nationalitate) {
