@@ -1,560 +1,274 @@
 package view;
 
-import model.*;
+import presenter.FilmDetailsPresenter;
 import presenter.FilmPresenter;
+import presenter.IFilmView;
+
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class FilmView extends JPanel {
+import static model.TipFilm.ARTISTIC;
+import static model.TipFilm.SERIAL;
+
+public class FilmView extends JPanel implements IFilmView {
+
     private FilmPresenter presenter;
+
     private JTable tabelFilme;
     private DefaultTableModel modelTabel;
-    private JTextField txtTitlu, txtAnRealizare, txtDescriere;
-    private JComboBox<TipFilm> cmbTipFilm;
-    private JComboBox<CategorieFilm> cmbCategorieFilm;
-    private JComboBox<Regizor> cmbRegizor;
-    private JComboBox<Scenarist> cmbScenarist;
-    private JList<Actor> listaActori;
-    private DefaultListModel<Actor> modelListaActori;
-    private JButton btnAdauga, btnActualizeaza, btnSterge, btnCurata, btnDetalii;
-    private JButton btnAdaugaImagini, btnFiltreaza, btnCautaActor;
+    private JTextField txtTitlu, txtAn, txtDescriere, txtFiltruAn;
+    private JComboBox<String[]> cbRegizor, cbScenarist;
+    private JComboBox<String> cbTip, cbCategorie, cbFiltruTip, cbFiltruCategorie;
+    private JList<String[]> listActori;
+    private DefaultListModel<String[]> modelActori;
+    private JTextField txtImagini;
     private String idFilmSelectat = null;
-    private List<String> imaginiSelectate = new ArrayList<>();
 
-    public FilmView(FilmPresenter presenter) {
-        this.presenter = presenter; // Primim presenterul gata configurat din MainView
+    public FilmView() {
         initializeUI();
-        incarcaFilme();
+    }
+
+    public void setPresenter(FilmPresenter presenter) {
+        this.presenter = presenter;
+    }
+
+    @Override public String getTitlu()          { return txtTitlu.getText().trim(); }
+    @Override public String getAnRealizare()    { return txtAn.getText().trim(); }
+    @Override public String getDescriere()      { return txtDescriere.getText().trim(); }
+    @Override public String getIdFilmSelectat() { return idFilmSelectat; }
+
+    @Override public String getFiltruTip() {
+        String s = (String) cbFiltruTip.getSelectedItem();
+        return (s == null || s.isEmpty()) ? null : s;
+    }
+    @Override public String getFiltruCategorie() {
+        String s = (String) cbFiltruCategorie.getSelectedItem();
+        return (s == null || s.isEmpty()) ? null : s;
+    }
+    @Override public String getFiltruAn()       { return txtFiltruAn.getText().trim(); }
+
+    @Override public String getTipFilm()        { return (String) cbTip.getSelectedItem(); }
+    @Override public String getCategorieFilm()  { return (String) cbCategorie.getSelectedItem(); }
+
+    @Override public String getRegizorId() {
+        String[] sel = (String[]) cbRegizor.getSelectedItem();
+        return sel != null ? sel[0] : null;
+    }
+    @Override public String getScenaristId() {
+        String[] sel = (String[]) cbScenarist.getSelectedItem();
+        return sel != null ? sel[0] : null;
+    }
+    @Override public List<String> getActorIdsSelectati() {
+        return Arrays.stream(listActori.getSelectedValuesList().toArray(new String[0][]))
+                .map(arr -> arr[0])
+                .collect(Collectors.toList());
+    }
+    @Override public List<String> getCaiImagini() {
+        String text = txtImagini.getText().trim();
+        if (text.isEmpty()) return List.of();
+        return Arrays.asList(text.split(";"));
+    }
+
+    @Override
+    public void afiseazaFilme(List<String[]> randuri) {
+        modelTabel.setRowCount(0);
+        for (String[] rand : randuri) modelTabel.addRow(rand);
+    }
+
+    @Override
+    public void populeazaRegizori(List<String[]> optiuni) {
+        cbRegizor.removeAllItems();
+        for (String[] opt : optiuni) cbRegizor.addItem(opt);
+    }
+
+    @Override
+    public void populeazaScenaristi(List<String[]> optiuni) {
+        cbScenarist.removeAllItems();
+        for (String[] opt : optiuni) cbScenarist.addItem(opt);
+    }
+
+    @Override
+    public void populeazaActori(List<String[]> optiuni) {
+        modelActori.clear();
+        for (String[] opt : optiuni) modelActori.addElement(opt);
+    }
+
+    @Override
+    public void afiseazaMesaj(String mesaj) {
+        JOptionPane.showMessageDialog(this, mesaj);
+    }
+
+    @Override
+    public void afiseazaEroare(String eroare) {
+        JOptionPane.showMessageDialog(this, eroare, "Eroare", JOptionPane.ERROR_MESSAGE);
+    }
+
+    @Override
+    public void curataFormular() {
+        idFilmSelectat = null;
+        txtTitlu.setText("");
+        txtAn.setText("");
+        txtDescriere.setText("");
+        txtImagini.setText("");
+        cbRegizor.setSelectedIndex(-1);
+        cbScenarist.setSelectedIndex(-1);
+        listActori.clearSelection();
+        tabelFilme.clearSelection();
+    }
+
+    @Override
+    public void deschideDetalii(FilmDetailsPresenter detailsPresenter) {
+        Frame parent = (Frame) SwingUtilities.getWindowAncestor(this);
+        FilmDetailsDialog dialog = new FilmDetailsDialog(parent, detailsPresenter);
+        dialog.setVisible(true);
+    }
+
+    @Override
+    public void setImaginiSelectate(String[] cai) {
+        txtImagini.setText(String.join(";", cai));
     }
 
     private void initializeUI() {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Panel principal split
-        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-        splitPane.setDividerLocation(350);
-
-        // Panel formular
-        JPanel panelFormular = new JPanel(new BorderLayout());
+        JPanel panelFormular = new JPanel(new GridBagLayout());
         panelFormular.setBorder(BorderFactory.createTitledBorder("Detalii Film"));
-
-                JPanel panelCampuri = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(4, 4, 4, 4);
+        gbc.fill   = GridBagConstraints.HORIZONTAL;
 
-        // Titlu
-        gbc.gridx = 0; gbc.gridy = 0;
-        panelCampuri.add(new JLabel("Titlu:"), gbc);
-                gbc.gridx = 1;
-        txtTitlu = new JTextField(20);
-        panelCampuri.add(txtTitlu, gbc);
+        gbc.gridx = 0; gbc.gridy = 0; panelFormular.add(new JLabel("Titlu:"), gbc);
+        gbc.gridx = 1; txtTitlu = new JTextField(20); panelFormular.add(txtTitlu, gbc);
 
-        // An Realizare
-        gbc.gridx = 0; gbc.gridy = 1;
-        panelCampuri.add(new JLabel("An Realizare:"), gbc);
-                gbc.gridx = 1;
-        txtAnRealizare = new JTextField(20);
-        panelCampuri.add(txtAnRealizare, gbc);
+        gbc.gridx = 0; gbc.gridy = 1; panelFormular.add(new JLabel("An:"), gbc);
+        gbc.gridx = 1; txtAn = new JTextField(20); panelFormular.add(txtAn, gbc);
 
-        // Tip Film
-        gbc.gridx = 0; gbc.gridy = 2;
-        panelCampuri.add(new JLabel("Tip Film:"), gbc);
-                gbc.gridx = 1;
-        cmbTipFilm = new JComboBox<>(TipFilm.values());
-        panelCampuri.add(cmbTipFilm, gbc);
+        gbc.gridx = 0; gbc.gridy = 2; panelFormular.add(new JLabel("Tip:"), gbc);
+        gbc.gridx = 1;
+        cbTip = new JComboBox<>(new String[]{"","ARTISTIC","SERIAL"});
+        panelFormular.add(cbTip, gbc);
 
-        // Categorie
-        gbc.gridx = 0; gbc.gridy = 3;
-        panelCampuri.add(new JLabel("Categorie:"), gbc);
-                gbc.gridx = 1;
-        cmbCategorieFilm = new JComboBox<>(CategorieFilm.values());
-        panelCampuri.add(cmbCategorieFilm, gbc);
+        gbc.gridx = 0; gbc.gridy = 3; panelFormular.add(new JLabel("Categorie:"), gbc);
+        gbc.gridx = 1;
+        cbCategorie = new JComboBox<>(new String[]{"ACTIUNE","DRAMA","COMEDIE","SF","HORROR","ROMANTIC","THRILLER"});
+        panelFormular.add(cbCategorie, gbc);
 
-        // Regizor
-        gbc.gridx = 0; gbc.gridy = 4;
-        panelCampuri.add(new JLabel("Regizor:"), gbc);
-                gbc.gridx = 1;
-        cmbRegizor = new JComboBox<>();
-        incarcaRegizori();
-        panelCampuri.add(cmbRegizor, gbc);
+        gbc.gridx = 0; gbc.gridy = 4; panelFormular.add(new JLabel("Regizor:"), gbc);
+        gbc.gridx = 1;
+        cbRegizor = new JComboBox<>();
+        cbRegizor.setRenderer(new DefaultListCellRenderer() {
+            @Override public Component getListCellRendererComponent(
+                    JList<?> list, Object value, int index, boolean isSelected, boolean hasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, hasFocus);
+                if (value instanceof String[]) setText(((String[]) value)[1]);
+                return this;
+            }
+        });
+        panelFormular.add(cbRegizor, gbc);
 
-        // Scenarist
-        gbc.gridx = 0; gbc.gridy = 5;
-        panelCampuri.add(new JLabel("Scenarist:"), gbc);
-                gbc.gridx = 1;
-        cmbScenarist = new JComboBox<>();
-        incarcaScenaristi();
-        panelCampuri.add(cmbScenarist, gbc);
+        gbc.gridx = 0; gbc.gridy = 5; panelFormular.add(new JLabel("Scenarist:"), gbc);
+        gbc.gridx = 1;
+        cbScenarist = new JComboBox<>();
+        cbScenarist.setRenderer(new DefaultListCellRenderer() {
+            @Override public Component getListCellRendererComponent(
+                    JList<?> list, Object value, int index, boolean isSelected, boolean hasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, hasFocus);
+                if (value instanceof String[]) setText(((String[]) value)[1]);
+                return this;
+            }
+        });
+        panelFormular.add(cbScenarist, gbc);
 
-        // Descriere
-        gbc.gridx = 0; gbc.gridy = 6;
-        panelCampuri.add(new JLabel("Descriere:"), gbc);
-                gbc.gridx = 1;
-        txtDescriere = new JTextField(20);
-        panelCampuri.add(txtDescriere, gbc);
+        gbc.gridx = 0; gbc.gridy = 6; panelFormular.add(new JLabel("Actori:"), gbc);
+        gbc.gridx = 1;
+        modelActori = new DefaultListModel<>();
+        listActori  = new JList<>(modelActori);
+        listActori.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        listActori.setCellRenderer(new DefaultListCellRenderer() {
+            @Override public Component getListCellRendererComponent(
+                    JList<?> list, Object value, int index, boolean isSelected, boolean hasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, hasFocus);
+                if (value instanceof String[]) setText(((String[]) value)[1]);
+                return this;
+            }
+        });
+        panelFormular.add(new JScrollPane(listActori), gbc);
 
-        // Lista actori
-        gbc.gridx = 0; gbc.gridy = 7;
-        gbc.anchor = GridBagConstraints.NORTH;
-        panelCampuri.add(new JLabel("Actori:"), gbc);
-                gbc.gridx = 1;
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.weighty = 1.0;
-        modelListaActori = new DefaultListModel<>();
-        listaActori = new JList<>(modelListaActori);
-        listaActori.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        incarcaActori();
-        JScrollPane scrollActori = new JScrollPane(listaActori);
-        scrollActori.setPreferredSize(new Dimension(200, 100));
-        panelCampuri.add(scrollActori, gbc);
+        gbc.gridx = 0; gbc.gridy = 7; panelFormular.add(new JLabel("Imagini:"), gbc);
+        gbc.gridx = 1;
+        JPanel panelImagini = new JPanel(new BorderLayout(4, 0));
+        txtImagini = new JTextField(14);
+        txtImagini.setEditable(false);
+        JButton btnImagini = new JButton("Alege...");
+        panelImagini.add(txtImagini, BorderLayout.CENTER);
+        panelImagini.add(btnImagini, BorderLayout.EAST);
+        panelFormular.add(panelImagini, gbc);
 
-        panelFormular.add(panelCampuri, BorderLayout.CENTER);
+        gbc.gridx = 0; gbc.gridy = 8; panelFormular.add(new JLabel("Descriere:"), gbc);
+        gbc.gridx = 1; txtDescriere = new JTextField(20); panelFormular.add(txtDescriere, gbc);
 
-        // Panel butoane
         JPanel panelButoane = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        btnAdauga = new JButton("Adaugă");
-                btnActualizeaza = new JButton("Actualizează");
-                        btnSterge = new JButton("Șterge");
-                                btnCurata = new JButton("Curăță");
-                                        btnAdaugaImagini = new JButton("Adaugă Imagini (max 3)");
-
-                                                panelButoane.add(btnAdauga);
+        JButton btnAdauga       = new JButton("Adaugă");
+        JButton btnActualizeaza = new JButton("Actualizează");
+        JButton btnSterge       = new JButton("Șterge");
+        JButton btnDetalii      = new JButton("Detalii");
+        JButton btnCurata       = new JButton("Curăță");
+        panelButoane.add(btnAdauga);
         panelButoane.add(btnActualizeaza);
         panelButoane.add(btnSterge);
+        panelButoane.add(btnDetalii);
         panelButoane.add(btnCurata);
-        panelButoane.add(btnAdaugaImagini);
 
-        panelFormular.add(panelButoane, BorderLayout.SOUTH);
+        gbc.gridx = 0; gbc.gridy = 9; gbc.gridwidth = 2;
+        panelFormular.add(panelButoane, gbc);
 
-        splitPane.setTopComponent(panelFormular);
 
-        // Panel tabel si filtre
-        JPanel panelJos = new JPanel(new BorderLayout());
+        JPanel panelFiltre = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panelFiltre.setBorder(BorderFactory.createTitledBorder("Filtre"));
+        cbFiltruTip = new JComboBox<>(new String[]{"","FILM_ARTISTIC","SERIAL"});
+        cbFiltruCategorie = new JComboBox<>(new String[]{"","ACTIUNE","DRAMA","COMEDIE","SF","HORROR","ROMANTIC","THRILLER"});
+        txtFiltruAn = new JTextField(6);
+        JButton btnFiltreaza = new JButton("Filtrează");
+        panelFiltre.add(new JLabel("Tip:"));       panelFiltre.add(cbFiltruTip);
+        panelFiltre.add(new JLabel("Categorie:")); panelFiltre.add(cbFiltruCategorie);
+        panelFiltre.add(new JLabel("An:"));        panelFiltre.add(txtFiltruAn);
+        panelFiltre.add(btnFiltreaza);
 
-        // Panel filtre si cautare
-        JPanel panelFiltrare = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        btnFiltreaza = new JButton("Filtrează Filme");
-                btnCautaActor = new JButton("Caută după Actor");
-                        JButton btnResetare = new JButton("Afișează Toate");
+        JPanel panelNord = new JPanel(new BorderLayout());
+        panelNord.add(panelFormular, BorderLayout.CENTER);
+        panelNord.add(panelFiltre, BorderLayout.SOUTH);
+        add(panelNord, BorderLayout.NORTH);
 
-                        panelFiltrare.add(btnFiltreaza);
-        panelFiltrare.add(btnCautaActor);
-        panelFiltrare.add(btnResetare);
-
-        panelJos.add(panelFiltrare, BorderLayout.NORTH);
-
-        // Tabel filme
-        String[] coloane = {"ID", "Titlu", "An", "Tip", "Categorie", "Regizor", "Scenarist"};
+        String[] coloane = {"ID", "Titlu", "An", "Tip", "Categorie"};
         modelTabel = new DefaultTableModel(coloane, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+            @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         tabelFilme = new JTable(modelTabel);
         tabelFilme.getColumnModel().getColumn(0).setMinWidth(0);
         tabelFilme.getColumnModel().getColumn(0).setMaxWidth(0);
+        tabelFilme.getColumnModel().getColumn(0).setWidth(0);
+        add(new JScrollPane(tabelFilme), BorderLayout.CENTER);
 
-        JScrollPane scrollPane = new JScrollPane(tabelFilme);
-        panelJos.add(scrollPane, BorderLayout.CENTER);
 
-        // Buton detalii
-        JPanel panelDetalii = new JPanel();
-        btnDetalii = new JButton("Vezi Detalii Film");
-                panelDetalii.add(btnDetalii);
-        panelJos.add(panelDetalii, BorderLayout.SOUTH);
-
-        splitPane.setBottomComponent(panelJos);
-        add(splitPane, BorderLayout.CENTER);
-
-        // Event handlers
-        btnAdauga.addActionListener(e -> adaugaFilm());
-        btnActualizeaza.addActionListener(e -> actualizeazaFilm());
-        btnSterge.addActionListener(e -> stergeFilm());
-        btnCurata.addActionListener(e -> curataFormular());
-        btnAdaugaImagini.addActionListener(e -> selecteazaImagini());
-        btnFiltreaza.addActionListener(e -> afiseazaDialogFiltrare());
-        btnCautaActor.addActionListener(e -> cautaDupaActor());
-        btnResetare.addActionListener(e -> incarcaFilme());
-        btnDetalii.addActionListener(e -> afiseazaDetaliiFilm());
+        btnAdauga.addActionListener(e       -> presenter.adauga());
+        btnActualizeaza.addActionListener(e -> presenter.actualizeaza());
+        btnSterge.addActionListener(e       -> presenter.sterge());
+        btnDetalii.addActionListener(e      -> presenter.veziDetalii());
+        btnFiltreaza.addActionListener(e    -> presenter.filtreaza());
+        btnImagini.addActionListener(e      -> presenter.alegeImagini());
+        btnCurata.addActionListener(e       -> curataFormular());
 
         tabelFilme.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
-                selecteazaFilm();
+                int rand = tabelFilme.getSelectedRow();
+                if (rand >= 0)
+                    idFilmSelectat = (String) modelTabel.getValueAt(rand, 0);
             }
         });
     }
-
-    private void adaugaFilm() {
-        try {
-            String titlu = txtTitlu.getText().trim();
-            if (titlu.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Titlul este obligatoriu!");
-                return;
-            }
-
-            int anRealizare = Integer.parseInt(txtAnRealizare.getText().trim());
-            TipFilm tipFilm = (TipFilm) cmbTipFilm.getSelectedItem();
-            CategorieFilm categorieFilm = (CategorieFilm) cmbCategorieFilm.getSelectedItem();
-            String descriere = txtDescriere.getText().trim();
-
-
-            Regizor r = (Regizor) cmbRegizor.getSelectedItem();
-            String regizorId = (r != null) ? r.getId() : null;
-
-            Scenarist s = (Scenarist) cmbScenarist.getSelectedItem();
-            String scenaristId = (s != null) ? s.getId() : null;
-
-
-            List<String> actorIds = new ArrayList<>();
-            for (Actor actor : listaActori.getSelectedValuesList()) {
-                actorIds.add(actor.getId());
-            }
-
-
-            presenter.adaugaFilm(titlu, anRealizare, tipFilm, categorieFilm,
-                    descriere, regizorId, scenaristId,
-                    actorIds, imaginiSelectate);
-
-            incarcaFilme();
-            curataFormular();
-            JOptionPane.showMessageDialog(this, "Film adăugat cu succes cu toți actorii și imaginile selectate!");
-
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "An realizare invalid!");
-        }
-    }
-
-        private void actualizeazaFilm() {
-            if (idFilmSelectat == null) {
-                JOptionPane.showMessageDialog(this, "Selectați un film din tabel!");
-                return;
-            }
-
-            try {
-                String titlu = txtTitlu.getText().trim();
-                int anRealizare = Integer.parseInt(txtAnRealizare.getText().trim());
-                TipFilm tipFilm = (TipFilm) cmbTipFilm.getSelectedItem();
-                CategorieFilm categorieFilm = (CategorieFilm) cmbCategorieFilm.getSelectedItem();
-                String descriere = txtDescriere.getText().trim();
-
-                Film film = presenter.getFilmById(idFilmSelectat);
-                if (film != null) {
-                    actualizeazaDetaliiFilm(film);
-                }
-
-                incarcaFilme();
-                curataFormular();
-                JOptionPane.showMessageDialog(this, "Film actualizat cu succes!");
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "An realizare invalid!");
-            }
-        }
-
-        private void actualizeazaDetaliiFilm(Film film) {
-            String titlu = txtTitlu.getText().trim();
-            int anRealizare = Integer.parseInt(txtAnRealizare.getText().trim());
-            TipFilm tipFilm = (TipFilm) cmbTipFilm.getSelectedItem();
-            CategorieFilm categorieFilm = (CategorieFilm) cmbCategorieFilm.getSelectedItem();
-            String descriere = txtDescriere.getText().trim();
-
-            String regizorId = null;
-            Regizor regizor = (Regizor) cmbRegizor.getSelectedItem();
-            if (regizor != null) {
-                regizorId = regizor.getId();
-            }
-
-            String scenaristId = null;
-            Scenarist scenarist = (Scenarist) cmbScenarist.getSelectedItem();
-            if (scenarist != null) {
-                scenaristId = scenarist.getId();
-            }
-
-            List<String> actorIds = new ArrayList<>();
-            for (Actor actor : listaActori.getSelectedValuesList()) {
-                actorIds.add(actor.getId());
-            }
-
-            presenter.actualizeazaFilm(film.getId(), titlu, anRealizare, tipFilm,
-                    categorieFilm, descriere, regizorId, scenaristId,
-                    actorIds, imaginiSelectate);
-        }
-
-        private void stergeFilm() {
-            if (idFilmSelectat == null) {
-                JOptionPane.showMessageDialog(this, "Selectați un film din tabel!");
-                return;
-            }
-
-            int confirmare = JOptionPane.showConfirmDialog(this,
-                    "Sigur doriți să ștergeți acest film?",
-                    "Confirmare",
-                    JOptionPane.YES_NO_OPTION);
-
-            if (confirmare == JOptionPane.YES_OPTION) {
-                presenter.stergeFilm(idFilmSelectat);
-                incarcaFilme();
-                curataFormular();
-                JOptionPane.showMessageDialog(this, "Film șters cu succes!");
-            }
-        }
-
-        private void selecteazaFilm() {
-            int randSelectat = tabelFilme.getSelectedRow();
-            if (randSelectat >= 0) {
-                idFilmSelectat = (String) modelTabel.getValueAt(randSelectat, 0);
-                Film film = presenter.getFilmById(idFilmSelectat);
-
-                if (film != null) {
-                    txtTitlu.setText(film.getTitlu());
-                    txtAnRealizare.setText(String.valueOf(film.getAnRealizare()));
-                    cmbTipFilm.setSelectedItem(film.getTipFilm());
-                    cmbCategorieFilm.setSelectedItem(film.getCategorieFilm());
-                    txtDescriere.setText(film.getDescriere() != null ? film.getDescriere() : "");
-
-                    if (film.getRegizorId() != null) {
-                        Regizor regizor = presenter.getRegizorById(film.getRegizorId());
-                        cmbRegizor.setSelectedItem(regizor);
-                    }
-
-                    if (film.getScenaristId() != null) {
-                        Scenarist scenarist = presenter.getScenaristById(film.getScenaristId());
-                        cmbScenarist.setSelectedItem(scenarist);
-                    }
-
-                    listaActori.clearSelection();
-                    List<Integer> indiciSelectati = new ArrayList<>();
-                    for (String actorId : film.getActorIds()) {
-                        for (int i = 0; i < modelListaActori.getSize(); i++) {
-                            if (modelListaActori.getElementAt(i).getId().equals(actorId)) {
-                                indiciSelectati.add(i);
-                            }
-                        }
-                    }
-                    int[] indices = indiciSelectati.stream().mapToInt(Integer::intValue).toArray();
-                    listaActori.setSelectedIndices(indices);
-
-                    imaginiSelectate = new ArrayList<>(film.getCaiImagini());
-                }
-            }
-        }
-
-    private void selecteazaImagini() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setMultiSelectionEnabled(true);
-        FileNameExtensionFilter filter = new FileNameExtensionFilter(
-                "Imagini", "jpg", "jpeg", "png", "gif");
-        fileChooser.setFileFilter(filter);
-
-        int result = fileChooser.showOpenDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File[] fisiere = fileChooser.getSelectedFiles();
-
-            if (fisiere.length > 3) {
-                JOptionPane.showMessageDialog(this, "Puteți selecta maximum 3 imagini!");
-                return;
-            }
-
-
-            File directorImagini = new File("images");
-
-
-            if (!directorImagini.exists()) {
-                directorImagini.mkdirs();
-            }
-
-            imaginiSelectate.clear();
-            for (File fisier : fisiere) {
-                try {
-
-                    String numeFisierUnic = System.currentTimeMillis() + "_" + fisier.getName();
-                    File destinatie = new File(directorImagini, numeFisierUnic);
-
-
-                    Files.copy(fisier.toPath(), destinatie.toPath(), StandardCopyOption.REPLACE_EXISTING);
-
-
-                    imaginiSelectate.add(destinatie.getPath());
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Eroare la copierea imaginii: " + ex.getMessage());
-                }
-            }
-
-            JOptionPane.showMessageDialog(this, imaginiSelectate.size() + " imagini selectate!");
-        }
-    }
-
-        private void afiseazaDialogFiltrare() {
-            JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Filtrare Filme", true);
-                    dialog.setLayout(new GridBagLayout());
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.insets = new Insets(5, 5, 5, 5);
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-
-            JComboBox<TipFilm> cmbTip = new JComboBox<>();
-            cmbTip.addItem(null);
-            for (TipFilm tip : TipFilm.values()) {
-                cmbTip.addItem(tip);
-            }
-
-            JComboBox<CategorieFilm> cmbCategorie = new JComboBox<>();
-            cmbCategorie.addItem(null);
-            for (CategorieFilm cat : CategorieFilm.values()) {
-                cmbCategorie.addItem(cat);
-            }
-
-            JTextField txtAn = new JTextField(10);
-
-            gbc.gridx = 0; gbc.gridy = 0;
-            dialog.add(new JLabel("Tip Film:"), gbc);
-                    gbc.gridx = 1;
-            dialog.add(cmbTip, gbc);
-
-            gbc.gridx = 0; gbc.gridy = 1;
-            dialog.add(new JLabel("Categorie:"), gbc);
-                    gbc.gridx = 1;
-            dialog.add(cmbCategorie, gbc);
-
-            gbc.gridx = 0; gbc.gridy = 2;
-            dialog.add(new JLabel("An:"), gbc);
-                    gbc.gridx = 1;
-            dialog.add(txtAn, gbc);
-
-            JButton btnFiltreaza = new JButton("Filtrează");
-                    gbc.gridx = 0; gbc.gridy = 3;
-            gbc.gridwidth = 2;
-            dialog.add(btnFiltreaza, gbc);
-
-            btnFiltreaza.addActionListener(e -> {
-                TipFilm tip = (TipFilm) cmbTip.getSelectedItem();
-                CategorieFilm categorie = (CategorieFilm) cmbCategorie.getSelectedItem();
-                Integer an = null;
-
-                if (!txtAn.getText().trim().isEmpty()) {
-                    try {
-                        an = Integer.parseInt(txtAn.getText().trim());
-                    } catch (NumberFormatException ex) {
-                        JOptionPane.showMessageDialog(dialog, "An invalid!");
-                        return;
-                    }
-                }
-
-                List<Film> filmeFiltrare = presenter.filtreazaFilme(tip, categorie, an);
-                afiseazaFilmeInTabel(filmeFiltrare);
-                dialog.dispose();
-            });
-
-            dialog.pack();
-            dialog.setLocationRelativeTo(this);
-            dialog.setVisible(true);
-        }
-
-        private void cautaDupaActor() {
-            List<Actor> actori = presenter.getActori();
-            Actor actorSelectat = (Actor) JOptionPane.showInputDialog(
-                    this,
-                    "Selectați un actor:",
-                    "Căutare după Actor",
-                    JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    actori.toArray(),
-                    null
-            );
-
-            if (actorSelectat != null) {
-                List<Film> filme = presenter.cautaFilmeCuActor(actorSelectat.getId());
-                afiseazaFilmeInTabel(filme);
-            }
-        }
-
-        private void afiseazaDetaliiFilm() {
-            if (idFilmSelectat == null) {
-                JOptionPane.showMessageDialog(this, "Selectați un film din tabel!");
-                return;
-            }
-
-            Film film = presenter.getFilmById(idFilmSelectat);
-            if (film != null) {
-                new FilmDetailsDialog((Frame) SwingUtilities.getWindowAncestor(this), film, presenter).setVisible(true);
-            }
-        }
-
-        private void curataFormular() {
-            idFilmSelectat = null;
-            txtTitlu.setText("");
-                    txtAnRealizare.setText("");
-                            txtDescriere.setText("");
-                                    cmbTipFilm.setSelectedIndex(0);
-            cmbCategorieFilm.setSelectedIndex(0);
-            cmbRegizor.setSelectedIndex(0);
-            cmbScenarist.setSelectedIndex(0);
-            listaActori.clearSelection();
-            imaginiSelectate.clear();
-            tabelFilme.clearSelection();
-        }
-
-        public void incarcaFilme() {
-            List<Film> filme = presenter.getFilmeSortateDeupaTip();
-            afiseazaFilmeInTabel(filme);
-        }
-
-        private void afiseazaFilmeInTabel(List<Film> filme) {
-            modelTabel.setRowCount(0);
-            for (Film film : filme) {
-                String regizor = "";
-                if (film.getRegizorId() != null) {
-                    Regizor r = presenter.getRegizorById(film.getRegizorId());
-                    if (r != null) regizor = r.getNumeComplet();
-                }
-
-                String scenarist ="";
-                if (film.getScenaristId() != null) {
-                    Scenarist s = presenter.getScenaristById(film.getScenaristId());
-                    if (s != null) scenarist = s.getNumeComplet();
-                }
-
-                modelTabel.addRow(new Object[]{
-                        film.getId(),
-                        film.getTitlu(),
-                        film.getAnRealizare(),
-                        film.getTipFilm(),
-                        film.getCategorieFilm(),
-                        regizor,
-                        scenarist
-                });
-            }
-        }
-
-        private void incarcaRegizori() {
-            cmbRegizor.removeAllItems();
-            cmbRegizor.addItem(null);
-            for (Regizor regizor : presenter.getRegizori()) {
-                cmbRegizor.addItem(regizor);
-            }
-        }
-
-        private void incarcaScenaristi() {
-            cmbScenarist.removeAllItems();
-            cmbScenarist.addItem(null);
-            for (Scenarist scenarist : presenter.getScenaristi()) {
-                cmbScenarist.addItem(scenarist);
-            }
-        }
-
-        private void incarcaActori() {
-            modelListaActori.clear();
-            for (Actor actor : presenter.getActori()) {
-                modelListaActori.addElement(actor);
-            }
-        }
-    }
+}

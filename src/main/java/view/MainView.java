@@ -1,7 +1,10 @@
 package view;
 
+import model.Actor;
+import model.Regizor;
+import model.Scenarist;
 import model.repository.*;
-import presenter.MainPresenter;
+import presenter.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,18 +14,19 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 public class MainView extends JFrame {
-    private ActorView actorView;
-    private RegizorView regizorView;
-    private ScenaristView scenaristView;
-    private FilmView filmView;
 
-    private MainPresenter mainPresenter;
-    private Connection connection;
+    private PersonaView actorView;
+    private PersonaView regizorView;
+    private PersonaView scenaristView;
+    private FilmView    filmView;
+
+    private final MainPresenter mainPresenter;
+    private final Connection    connection;
 
     public MainView(MainPresenter mainPresenter, Connection connection) {
         super("Sistem Management Producție Filme");
         this.mainPresenter = mainPresenter;
-        this.connection = connection;
+        this.connection    = connection;
         initializeUI();
     }
 
@@ -37,7 +41,6 @@ public class MainView extends JFrame {
                 try {
                     if (connection != null && !connection.isClosed()) {
                         connection.close();
-                        System.out.println("Conexiunea la baza de date a fost închisă.");
                     }
                 } catch (SQLException ex) {
                     ex.printStackTrace();
@@ -45,59 +48,88 @@ public class MainView extends JFrame {
             }
         });
 
+        // --- Construiește Presenter-ele cu factory lambda ---
+        PersonaPresenter<Actor> actorPresenter =
+                new PersonaPresenter<>(mainPresenter.getActorRepo(),
+                        args -> new Actor((String) args[0], (String) args[1],
+                                (int)    args[2], (String) args[3]));
 
+        PersonaPresenter<Regizor> regizorPresenter =
+                new PersonaPresenter<>(mainPresenter.getRegizorRepo(),
+                        args -> new Regizor((String) args[0], (String) args[1],
+                                (int)    args[2], (String) args[3]));
+
+        PersonaPresenter<Scenarist> scenaristPresenter =
+                new PersonaPresenter<>(mainPresenter.getScenaristRepo(),
+                        args -> new Scenarist((String) args[0], (String) args[1],
+                                (int)    args[2], (String) args[3]));
+
+        FilmPresenter filmPresenter = mainPresenter.getFilmPresenter();
+
+        actorView     = new PersonaView("Actor");
+        regizorView   = new PersonaView("Regizor");
+        scenaristView = new PersonaView("Scenarist");
+        filmView      = new FilmView();
+
+        actorPresenter.setView(actorView);
+        regizorPresenter.setView(regizorView);
+        scenaristPresenter.setView(scenaristView);
+        filmPresenter.setView(filmView);
+
+        // --- Injectează Presenter în View (View cunoaște doar interfața) ---
+        actorView.setPresenter(actorPresenter);
+        regizorView.setPresenter(regizorPresenter);
+        scenaristView.setPresenter(scenaristPresenter);
+        filmView.setPresenter(filmPresenter);
+
+        // --- Încarcă datele inițiale ---
+        actorPresenter.incarcaToate();
+        regizorPresenter.incarcaToate();
+        scenaristPresenter.incarcaToate();
+        filmPresenter.incarcaToate();
+
+        // --- Tab-uri ---
         JTabbedPane tabbedPane = new JTabbedPane();
-
-
-        actorView = new ActorView(mainPresenter.getActorPresenter());
-        regizorView = new RegizorView(mainPresenter.getRegizorPresenter());
-        scenaristView = new ScenaristView(mainPresenter.getScenaristPresenter());
-        filmView = new FilmView(mainPresenter.getFilmPresenter());
-
-        tabbedPane.addTab("Actori", actorView);
-        tabbedPane.addTab("Regizori", regizorView);
+        tabbedPane.addTab("Actori",     actorView);
+        tabbedPane.addTab("Regizori",   regizorView);
         tabbedPane.addTab("Scenariști", scenaristView);
-        tabbedPane.addTab("Filme", filmView);
+        tabbedPane.addTab("Filme",      filmView);
 
-
+        // listener fără logică — doar apel spre Presenter
         tabbedPane.addChangeListener(e -> {
-            int selectedIndex = tabbedPane.getSelectedIndex();
-            switch (selectedIndex) {
-                case 0: actorView.incarcaActori(); break;
-                case 1: regizorView.incarcaRegizori(); break;
-                case 2: scenaristView.incarcaScenaristi(); break;
-                case 3: filmView.incarcaFilme(); break;
+            int idx = tabbedPane.getSelectedIndex();
+            switch (idx) {
+                case 0: actorPresenter.incarcaToate();     break;
+                case 1: regizorPresenter.incarcaToate();   break;
+                case 2: scenaristPresenter.incarcaToate(); break;
+                case 3: filmPresenter.incarcaToate();      break;
             }
         });
 
         add(tabbedPane);
 
-        // Meniu
-        JMenuBar menuBar = new JMenuBar();
-        JMenu menuFisier = new JMenu("Fișier");
+        // --- Meniu ---
+        JMenuBar menuBar     = new JMenuBar();
+        JMenu menuFisier     = new JMenu("Fișier");
         JMenuItem itemIesire = new JMenuItem("Ieșire");
         itemIesire.addActionListener(e -> {
-            // Declanșăm evenimentul de închidere pentru a rula logica de stop connection
             dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
             System.exit(0);
         });
         menuFisier.add(itemIesire);
 
-        JMenu menuAjutor = new JMenu("Ajutor");
+        JMenu menuAjutor     = new JMenu("Ajutor");
         JMenuItem itemDespre = new JMenuItem("Despre");
-        itemDespre.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this,
-                    "Sistem Management Producție Filme\n" +
-                            "Versiune 1.0\nAplicație pentru gestionarea filmelor.",
-                    "Despre", JOptionPane.INFORMATION_MESSAGE);
-        });
+        itemDespre.addActionListener(e ->
+                JOptionPane.showMessageDialog(this,
+                        "Sistem Management Producție Filme\nVersiune 1.0",
+                        "Despre", JOptionPane.INFORMATION_MESSAGE));
         menuAjutor.add(itemDespre);
 
         menuBar.add(menuFisier);
         menuBar.add(menuAjutor);
         setJMenuBar(menuBar);
     }
-
 
     public static void main(String[] args) {
         try {
@@ -108,23 +140,24 @@ public class MainView extends JFrame {
 
         SwingUtilities.invokeLater(() -> {
             try {
-                DatabaseConfig dbConfig = DatabaseManager.getConnectionWrapper(false);
-                Connection connection = dbConfig.getConnection();
+                DatabaseConfig dbConfig   = DatabaseManager.getConnectionWrapper(false);
+                Connection     connection = dbConfig.getConnection();
 
                 if (connection == null) {
-                    JOptionPane.showMessageDialog(null, "Eroare Conexiune DB!", "Eroare", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null,
+                            "Eroare Conexiune DB!", "Eroare", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
-                FilmRepository filmRepo = new FilmRepository(connection);
-                ActorRepository actorRepo = new ActorRepository(connection);
-                RegizorRepository regizorRepo = new RegizorRepository(connection);
+                FilmRepository      filmRepo      = new FilmRepository(connection);
+                ActorRepository     actorRepo     = new ActorRepository(connection);
+                RegizorRepository   regizorRepo   = new RegizorRepository(connection);
                 ScenaristRepository scenaristRepo = new ScenaristRepository(connection);
 
-                MainPresenter mainPresenter = new MainPresenter(filmRepo, actorRepo, regizorRepo, scenaristRepo);
+                MainPresenter mainPresenter = new MainPresenter(
+                        filmRepo, actorRepo, regizorRepo, scenaristRepo);
 
-                MainView mainView = new MainView(mainPresenter, connection);
-                mainView.setVisible(true);
+                new MainView(mainPresenter, connection).setVisible(true);
 
             } catch (Exception e) {
                 e.printStackTrace();
