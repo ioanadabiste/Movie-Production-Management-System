@@ -116,7 +116,7 @@ public class RegizorView extends JPanel {
                     return;
                 }
 
-                presenter.adaugaRegizor(nume, prenume, anNastere, nationalitate);
+                presenter.adauga(nume, prenume, anNastere, nationalitate);
                 incarcaRegizori();
                 curataFormular();
                 JOptionPane.showMessageDialog(this, "Regizor adăugat cu succes!");
@@ -142,7 +142,7 @@ public class RegizorView extends JPanel {
                     return;
                 }
 
-                presenter.actualizeazaRegizor(idRegizorSelectat, nume, prenume, anNastere, nationalitate);
+                presenter.actualizeaza(idRegizorSelectat, nume, prenume, anNastere, nationalitate);
                 incarcaRegizori();
                 curataFormular();
                 JOptionPane.showMessageDialog(this, "Regizor actualizat cu succes!");
@@ -163,7 +163,7 @@ public class RegizorView extends JPanel {
                     JOptionPane.YES_NO_OPTION);
 
             if (confirmare == JOptionPane.YES_OPTION) {
-                presenter.stergeRegizor(idRegizorSelectat);
+                presenter.sterge(idRegizorSelectat);
                 incarcaRegizori();
                 curataFormular();
                 JOptionPane.showMessageDialog(this, "Regizor șters cu succes!");
@@ -192,7 +192,7 @@ public class RegizorView extends JPanel {
 
         void incarcaRegizori() {
             modelTabel.setRowCount(0);
-            List<Regizor> regizori = presenter.getRegizori();
+            List<Regizor> regizori = presenter.getAll();
             for (Regizor regizor : regizori) {
                 modelTabel.addRow(new Object[]{
                         regizor.getId(),

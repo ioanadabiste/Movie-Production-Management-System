@@ -10,139 +10,91 @@ import java.util.List;
 
 public class MainPresenter {
 
-    private ActorPresenter actorPresenter;
-    private FilmPresenter filmPresenter;
-
-    public ActorPresenter getActorPresenter() {
-        return actorPresenter;
-    }
-
-    public FilmPresenter getFilmPresenter() {
-        return filmPresenter;
-    }
-
-    public RegizorPresenter getRegizorPresenter() {
-        return regizorPresenter;
-    }
-
-    public ScenaristPresenter getScenaristPresenter() {
-        return scenaristPresenter;
-    }
-
-    private RegizorPresenter regizorPresenter;
-    private ScenaristPresenter scenaristPresenter;
+    private final ActorPresenter actorPresenter;
+    private final RegizorPresenter regizorPresenter;
+    private final ScenaristPresenter scenaristPresenter;
+    private final FilmPresenter filmPresenter;
 
     public MainPresenter(FilmRepository filmRepo,
                          ActorRepository actorRepo,
                          RegizorRepository regizorRepo,
                          ScenaristRepository scenaristRepo) {
 
-        this.actorPresenter = new ActorPresenter(actorRepo);
-        this.regizorPresenter = new RegizorPresenter(regizorRepo);
+        this.actorPresenter     = new ActorPresenter(actorRepo);
+        this.regizorPresenter   = new RegizorPresenter(regizorRepo);
         this.scenaristPresenter = new ScenaristPresenter(scenaristRepo);
-        this.filmPresenter = new FilmPresenter(filmRepo, actorRepo, regizorRepo, scenaristRepo);
+        this.filmPresenter      = new FilmPresenter(filmRepo, actorRepo, regizorRepo, scenaristRepo);
     }
 
-    //  ACTORI
+    // --- Getteri pentru sub-presentere (folosite de View-uri specializate) ---
+
+    public ActorPresenter getActorPresenter()         { return actorPresenter; }
+    public RegizorPresenter getRegizorPresenter()     { return regizorPresenter; }
+    public ScenaristPresenter getScenaristPresenter() { return scenaristPresenter; }
+    public FilmPresenter getFilmPresenter()           { return filmPresenter; }
+
+    // --- ACTORI ---
 
     public void adaugaActor(String nume, String prenume, int anNastere, String nationalitate) {
-        actorPresenter.adaugaActor(nume, prenume, anNastere, nationalitate);
+        actorPresenter.adauga(nume, prenume, anNastere, nationalitate);
     }
 
     public void actualizeazaActor(String id, String nume, String prenume, int anNastere, String nationalitate) {
-        actorPresenter.actualizeazaActor(id, nume, prenume, anNastere, nationalitate);
+        actorPresenter.actualizeaza(id, nume, prenume, anNastere, nationalitate);
     }
 
-    public void stergeActor(String id) {
-        actorPresenter.stergeActor(id);
-    }
+    public void stergeActor(String id)            { actorPresenter.sterge(id); }
+    public List<Actor> getActori()                { return actorPresenter.getAll(); }
+    public Actor getActorById(String id)          { return actorPresenter.getById(id); }
 
-    public List<Actor> getActori() {
-        return actorPresenter.getActori();
-    }
-
-    public Actor getActorById(String id) {
-        return actorPresenter.getActorById(id);
-    }
-
-    // REGIZORI
+    // --- REGIZORI ---
 
     public void adaugaRegizor(String nume, String prenume, int anNastere, String nationalitate) {
-        regizorPresenter.adaugaRegizor(nume, prenume, anNastere, nationalitate);
+        regizorPresenter.adauga(nume, prenume, anNastere, nationalitate);
     }
 
     public void actualizeazaRegizor(String id, String nume, String prenume, int anNastere, String nationalitate) {
-        regizorPresenter.actualizeazaRegizor(id, nume, prenume, anNastere, nationalitate);
+        regizorPresenter.actualizeaza(id, nume, prenume, anNastere, nationalitate);
     }
 
-    public void stergeRegizor(String id) {
-        regizorPresenter.stergeRegizor(id);
-    }
+    public void stergeRegizor(String id)          { regizorPresenter.sterge(id); }
+    public List<Regizor> getRegizori()            { return regizorPresenter.getAll(); }
+    public Regizor getRegizorById(String id)      { return regizorPresenter.getById(id); }
 
-    public List<Regizor> getRegizori() {
-        return regizorPresenter.getRegizori();
-    }
-
-    public Regizor getRegizorById(String id) {
-        return regizorPresenter.getRegizorById(id);
-    }
-
-    // SCENARISTI
+    // --- SCENARISTI ---
 
     public void adaugaScenarist(String nume, String prenume, int anNastere, String nationalitate) {
-        scenaristPresenter.adaugaScenarist(nume, prenume, anNastere, nationalitate);
+        scenaristPresenter.adauga(nume, prenume, anNastere, nationalitate);
     }
 
     public void actualizeazaScenarist(String id, String nume, String prenume, int anNastere, String nationalitate) {
-        scenaristPresenter.actualizeazaScenarist(id, nume, prenume, anNastere, nationalitate);
+        scenaristPresenter.actualizeaza(id, nume, prenume, anNastere, nationalitate);
     }
 
-    public void stergeScenarist(String id) {
-        scenaristPresenter.stergeScenarist(id);
-    }
+    public void stergeScenarist(String id)        { scenaristPresenter.sterge(id); }
+    public List<Scenarist> getScenaristi()        { return scenaristPresenter.getAll(); }
+    public Scenarist getScenaristById(String id)  { return scenaristPresenter.getById(id); }
 
-    public List<Scenarist> getScenaristi() {
-        return scenaristPresenter.getScenaristi();
-    }
-
-    public Scenarist getScenaristById(String id) {
-        return scenaristPresenter.getScenaristById(id);
-    }
-
-    // FILME
+    // --- FILME ---
 
     public void adaugaFilm(String titlu, int an, TipFilm tip, CategorieFilm categorie,
                            String descriere, String regizorId, String scenaristId,
                            List<String> actorIds, List<String> imagini) {
-
-        filmPresenter.adaugaFilm(titlu, an, tip, categorie, descriere,
-                regizorId, scenaristId, actorIds, imagini);
+        filmPresenter.adaugaFilm(titlu, an, tip, categorie, descriere, regizorId, scenaristId, actorIds, imagini);
     }
 
     public void actualizeazaFilm(String id, String titlu, int an, TipFilm tip,
                                  CategorieFilm categorie, String descriere,
                                  String regizorId, String scenaristId,
                                  List<String> actorIds, List<String> imagini) {
-
-        filmPresenter.actualizeazaFilm(id, titlu, an, tip, categorie,
-                descriere, regizorId, scenaristId, actorIds, imagini);
+        filmPresenter.actualizeazaFilm(id, titlu, an, tip, categorie, descriere, regizorId, scenaristId, actorIds, imagini);
     }
 
-    public void stergeFilm(String id) {
-        filmPresenter.stergeFilm(id);
-    }
+    public void stergeFilm(String id)             { filmPresenter.stergeFilm(id); }
+    public List<Film> getFilme()                  { return filmPresenter.getFilme(); }
+    public Film getFilmById(String id)            { return filmPresenter.getFilmById(id); }
 
-    public List<Film> getFilme() {
-        return filmPresenter.getFilme();
-    }
-
-    public Film getFilmById(String id) {
-        return filmPresenter.getFilmById(id);
-    }
-
-    public List<Film> getFilmeSortateDeupaTip() {
-        return filmPresenter.getFilmeSortateDeupaTip();
-    }
+    public List<Film> getFilmeSortateDeupaTip()   { return filmPresenter.getFilmeSortateDeupaTip(); }
 
     public List<Film> filtreazaFilme(TipFilm tip, CategorieFilm categorie, Integer an) {
         return filmPresenter.filtreazaFilme(tip, categorie, an);

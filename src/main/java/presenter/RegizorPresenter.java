@@ -3,40 +3,14 @@ package presenter;
 import model.Regizor;
 import model.repository.RegizorRepository;
 
-import java.util.List;
-
-public class RegizorPresenter {
-    private RegizorRepository repository;
+public class RegizorPresenter extends PersonaPresenter<Regizor, RegizorRepository> {
 
     public RegizorPresenter(RegizorRepository repository) {
-        this.repository = repository;
+        super(repository);
     }
 
-    public void adaugaRegizor(String nume, String prenume, int anNastere, String nationalitate) {
-        Regizor regizor = new Regizor(nume, prenume, anNastere, nationalitate);
-        repository.adaugaRegizor(regizor);
-    }
-
-    public void actualizeazaRegizor(String id, String nume, String prenume, int anNastere, String nationalitate) {
-        Regizor regizor = repository.getRegizorById(id);
-        if (regizor != null) {
-            regizor.setNume(nume);
-            regizor.setPrenume(prenume);
-            regizor.setAnNastere(anNastere);
-            regizor.setNationalitate(nationalitate);
-            repository.actualizeazaRegizor(regizor);
-        }
-    }
-
-    public void stergeRegizor(String id) {
-        repository.stergeRegizor(id);
-    }
-
-    public List<Regizor> getRegizori() {
-        return repository.getRegizori();
-    }
-
-    public Regizor getRegizorById(String id) {
-        return repository.getRegizorById(id);
+    @Override
+    protected Regizor createInstance(String nume, String prenume, int anNastere, String nationalitate) {
+        return new Regizor(nume, prenume, anNastere, nationalitate);
     }
 }

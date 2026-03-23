@@ -1,0 +1,89 @@
+<div id="erd" style="padding:8px 0"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+  },
+});
+const diagram = `erDiagram
+  FILME ||--o{ FILME_ACTORI : "are in distributie"
+  ACTORI ||--o{ FILME_ACTORI : "joaca in"
+  FILME ||--o{ FILME_IMAGINI : "are asociate"
+  REGIZORI ||--o{ FILME : "regizeaza"
+  SCENARISTI ||--o{ FILME : "scrie scenariul"
+
+  ACTORI {
+    varchar id PK
+    varchar nume
+    varchar prenume
+    int an_nastere
+    varchar nationalitate
+  }
+  REGIZORI {
+    varchar id PK
+    varchar nume
+    varchar prenume
+    int an_nastere
+    varchar nationalitate
+  }
+  SCENARISTI {
+    varchar id PK
+    varchar nume
+    varchar prenume
+    int an_nastere
+    varchar nationalitate
+  }
+  FILME {
+    varchar id PK
+    varchar titlu
+    int an_realizare
+    varchar tip_film
+    varchar categorie_film
+    varchar regizor_id FK
+    varchar scenarist_id FK
+    text descriere
+  }
+  FILME_ACTORI {
+    varchar film_id FK
+    varchar actor_id FK
+  }
+  FILME_IMAGINI {
+    varchar film_id FK
+    varchar cale_imagine
+  }
+`;
+const { svg } = await mermaid.render('erd-svg', diagram);
+document.getElementById('erd').innerHTML = svg;
+document.querySelectorAll('#erd svg .node').forEach(node => {
+  const firstPath = node.querySelector('path[d]');
+  if (!firstPath) return;
+  const d = firstPath.getAttribute('d');
+  const nums = d.match(/-?[\d.]+/g)?.map(Number);
+  if (!nums || nums.length < 8) return;
+  const xs = [nums[0], nums[2], nums[4], nums[6]];
+  const ys = [nums[1], nums[3], nums[5], nums[7]];
+  const x = Math.min(...xs), y = Math.min(...ys);
+  const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+  const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  rect.setAttribute('x', x); rect.setAttribute('y', y);
+  rect.setAttribute('width', w); rect.setAttribute('height', h);
+  rect.setAttribute('rx', '8');
+  for (const a of ['fill','stroke','stroke-width','class','style']) {
+    if (firstPath.hasAttribute(a)) rect.setAttribute(a, firstPath.getAttribute(a));
+  }
+  firstPath.replaceWith(rect);
+});
+document.querySelectorAll('#erd svg .row-rect-odd path, #erd svg .row-rect-even path').forEach(p => {
+  p.setAttribute('stroke','none');
+});
+</script>

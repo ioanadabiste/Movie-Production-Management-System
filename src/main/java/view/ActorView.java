@@ -119,7 +119,7 @@ public class ActorView extends JPanel {
                     return;
                 }
 
-                presenter.adaugaActor(nume, prenume, anNastere, nationalitate);
+                presenter.adauga(nume, prenume, anNastere, nationalitate);
                 incarcaActori();
                 curataFormular();
                 JOptionPane.showMessageDialog(this, "Actor adăugat cu succes!");
@@ -145,7 +145,7 @@ public class ActorView extends JPanel {
                     return;
                 }
 
-                presenter.actualizeazaActor(idActorSelectat, nume, prenume, anNastere, nationalitate);
+                presenter.actualizeaza(idActorSelectat, nume, prenume, anNastere, nationalitate);
                 incarcaActori();
                 curataFormular();
                 JOptionPane.showMessageDialog(this, "Actor actualizat cu succes!");
@@ -166,7 +166,7 @@ public class ActorView extends JPanel {
                     JOptionPane.YES_NO_OPTION);
 
             if (confirmare == JOptionPane.YES_OPTION) {
-                presenter.stergeActor(idActorSelectat);
+                presenter.sterge(idActorSelectat);
                 incarcaActori();
                 curataFormular();
                 JOptionPane.showMessageDialog(this, "Actor șters cu succes!");
@@ -195,7 +195,7 @@ public class ActorView extends JPanel {
 
         public void incarcaActori() {
             modelTabel.setRowCount(0);
-            List<Actor> actori = presenter.getActori();
+            List<Actor> actori = presenter.getAll();
             for (Actor actor : actori) {
                 modelTabel.addRow(new Object[]{
                         actor.getId(),

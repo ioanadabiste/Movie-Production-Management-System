@@ -110,7 +110,7 @@ public class ScenaristView extends JPanel {
                     return;
                 }
 
-                presenter.adaugaScenarist(nume, prenume, anNastere, nationalitate);
+                presenter.adauga(nume, prenume, anNastere, nationalitate);
                 incarcaScenaristi();
                 curataFormular();
                 JOptionPane.showMessageDialog(this, "Scenarist adăugat cu succes!");
@@ -136,7 +136,7 @@ public class ScenaristView extends JPanel {
                     return;
                 }
 
-                presenter.actualizeazaScenarist(idScenaristSelectat, nume, prenume, anNastere, nationalitate);
+                presenter.actualizeaza(idScenaristSelectat, nume, prenume, anNastere, nationalitate);
                 incarcaScenaristi();
                 curataFormular();
                 JOptionPane.showMessageDialog(this, "Scenarist actualizat cu succes!");
@@ -157,7 +157,7 @@ public class ScenaristView extends JPanel {
                     JOptionPane.YES_NO_OPTION);
 
             if (confirmare == JOptionPane.YES_OPTION) {
-                presenter.stergeScenarist(idScenaristSelectat);
+                presenter.sterge(idScenaristSelectat);
                 incarcaScenaristi();
                 curataFormular();
                 JOptionPane.showMessageDialog(this, "Scenarist șters cu succes!");
@@ -186,7 +186,7 @@ public class ScenaristView extends JPanel {
 
         public void incarcaScenaristi() {
             modelTabel.setRowCount(0);
-            List<Scenarist> scenaristi = presenter.getScenaristi();
+            List<Scenarist> scenaristi = presenter.getAll();
             for (Scenarist scenarist : scenaristi) {
                 modelTabel.addRow(new Object[]{
                         scenarist.getId(),
